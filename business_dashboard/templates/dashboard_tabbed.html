@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍕 Pizza Business Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .header-info {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px 12px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-button.active {
+            background: #fff;
+            color: #2c3e50;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-button:hover:not(.active) {
+            background: rgba(255,255,255,0.7);
+            color: #2c3e50;
+        }
+        
+        .tab-button .badge {
+            background: #e74c3c;
+            color: white;
+            border-radius: 12px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 0 0 12px 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+        
+        .tab-panel {
+            display: none;
+        }
+        
+        .tab-panel.active {
+            display: block;
+        }
+        
+        /* Order Cards */
+        .order-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+            transition: transform 0.2s ease;
+        }
+        
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .order-card.pending {
+            border-left-color: #f39c12;
+            background: linear-gradient(135deg, #fff 0%, #fef9e7 100%);
+        }
+        
+        .order-card.confirmed {
+            border-left-color: #27ae60;
+        }
+        
+        .order-card.completed {
+            border-left-color: #2ecc71;
+        }
+        
+        .order-card.rejected {
+            border-left-color: #e74c3c;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .order-id {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        
+        .order-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-completed { background: #d1ecf1; color: #0c5460; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        
+        .order-details {
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .order-time {
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .order-status-badge {
+            margin-top: 1rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-confirm {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-confirm:hover:not(:disabled) {
+            background: #219a52;
+            transform: translateY(-1px);
+        }
+        
+        .btn-reject {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-reject:hover:not(:disabled) {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+        
+        .btn-complete {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-complete:hover:not(:disabled) {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        
+        .refresh-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s ease;
+            float: right;
+        }
+        
+        .refresh-btn:hover {
+            background: #2980b9;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .header-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .tab-nav {
+                flex-direction: column;
+            }
+            
+            .order-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .order-actions {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍕 Pizza Business Dashboard</h1>
+        <div class="header-info">
+            <div>📅 <span id="currentTime"></span></div>
+            <div>👨‍💼 Restaurant Manager</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-button active" onclick="switchTab('pending')">
+                📋 Pending Orders
+                {% if pending_orders %}
+                    <span class="badge">{{ pending_orders|length }}</span>
+                {% endif %}
+            </button>
+            <button class="tab-button" onclick="switchTab('accepted')">
+                ✅ Accepted Orders
+                {% if accepted_orders %}
+                    <span class="badge">{{ accepted_orders|length }}</span>
+                {% endif %}
+            </button>
+            <button class="tab-button" onclick="switchTab('rejected')">
+                ❌ Rejected Orders
+                {% if rejected_orders %}
+                    <span class="badge">{{ rejected_orders|length }}</span>
+                {% endif %}
+            </button>
+            <button class="tab-button" onclick="switchTab('analytics')">
+                📊 Analytics
+            </button>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Pending Orders Tab -->
+            <div id="pending-tab" class="tab-panel active">
+                <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
+                <h2 style="margin-bottom: 1.5rem; color: #2c3e50;">Orders Awaiting Approval</h2>
+                
+                {% if pending_orders %}
+                    {% for order in pending_orders %}
+                    <div class="order-card pending">
+                        <div class="order-header">
+                            <div class="order-id">Order #{{ order.order_id }}</div>
+                            <div class="order-status status-pending">Pending</div>
+                        </div>
+                        <div class="order-details">{{ order.items_summary }}</div>
+                        <div class="order-time">⏰ {{ order.created_at }}</div>
+                        <div class="order-actions">
+                            <button class="btn btn-confirm" onclick="confirmOrder('{{ order.order_id }}')">✅ Confirm</button>
+                            <button class="btn btn-reject" onclick="rejectOrder('{{ order.order_id }}')">❌ Reject</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>🎉 All caught up!</h3>
+                        <p>No orders waiting for approval</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Accepted Orders Tab -->
+            <div id="accepted-tab" class="tab-panel">
+                <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
+                <h2 style="margin-bottom: 1.5rem; color: #2c3e50;">Accepted Orders - In Preparation</h2>
+                
+                {% if accepted_orders %}
+                    {% for order in accepted_orders %}
+                    <div class="order-card confirmed">
+                        <div class="order-header">
+                            <div class="order-id">Order #{{ order.order_id }}</div>
+                            <div class="order-status status-confirmed">✅ Confirmed</div>
+                        </div>
+                        <div class="order-details">{{ order.items_summary }}</div>
+                        <div class="order-time">⏰ {{ order.created_at }}</div>
+                        <div class="order-customer">📧 {{ order.customer_email or 'No email' }}</div>
+                        <div class="order-actions">
+                            <button class="btn btn-complete" onclick="completeOrder('{{ order.order_id }}')">🍕 Mark Ready</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>🍕 No orders in preparation</h3>
+                        <p>Accepted orders will appear here</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Rejected Orders Tab -->
+            <div id="rejected-tab" class="tab-panel">
+                <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
+                <h2 style="margin-bottom: 1.5rem; color: #2c3e50;">Rejected Orders</h2>
+                
+                {% if rejected_orders %}
+                    {% for order in rejected_orders %}
+                    <div class="order-card rejected">
+                        <div class="order-header">
+                            <div class="order-id">Order #{{ order.order_id }}</div>
+                            <div class="order-status status-rejected">❌ Rejected</div>
+                        </div>
+                        <div class="order-details">{{ order.items_summary }}</div>
+                        <div class="order-time">⏰ {{ order.created_at }}</div>
+                        <div class="order-customer">📧 {{ order.customer_email or 'No email' }}</div>
+                        <div class="order-status-badge">
+                            <span class="status-badge status-rejected">Order Declined</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>📝 No rejected orders</h3>
+                        <p>Declined orders will appear here</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-panel">
+                <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
+                <h2 style="margin-bottom: 1.5rem; color: #2c3e50;">Today's Analytics</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.total_orders or 0 }}</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.pending_orders or 0 }}</div>
+                        <div class="stat-label">Pending Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.confirmed_orders or 0 }}</div>
+                        <div class="stat-label">Confirmed Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.completed_orders or 0 }}</div>
+                        <div class="stat-label">Completed Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.rejected_orders or 0 }}</div>
+                        <div class="stat-label">Rejected Orders</div>
+                    </div>
+                </div>
+                
+                {% if not stats or stats.total_orders == 0 %}
+                <div class="empty-state">
+                    <h3>📊 No Data Yet</h3>
+                    <p>Analytics will appear as orders come in</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const options = { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: true 
+            };
+            document.getElementById('currentTime').textContent = now.toLocaleDateString('en-IN', options);
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Auto refresh every 3 minutes
+        setInterval(() => location.reload(), 180000);
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tab panels
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab panel
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to clicked tab button
+            event.target.classList.add('active');
+        }
+        
+        // Order actions
+        async function confirmOrder(orderId) {
+            // Disable button to prevent double clicks
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '⏳ Confirming...';
+            
+            try {
+                const response = await fetch(`/api/orders/${orderId}/confirm`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    button.textContent = '✅ Confirmed';
+                    button.style.backgroundColor = '#28a745';
+                    
+                    // Hide the entire order card since it's no longer pending
+                    const orderCard = button.closest('.order-card');
+                    orderCard.style.opacity = '0.5';
+                    orderCard.style.pointerEvents = 'none';
+                    
+                    // Show success message
+                    const statusDiv = orderCard.querySelector('.order-status');
+                    statusDiv.textContent = 'Confirmed ✅';
+                    statusDiv.className = 'order-status status-confirmed';
+                    
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    alert('Error confirming order');
+                    button.disabled = false;
+                    button.textContent = '✅ Confirm';
+                }
+            } catch (error) {
+                alert('Error confirming order');
+                button.disabled = false;
+                button.textContent = '✅ Confirm';
+            }
+        }
+        
+        async function rejectOrder(orderId) {
+            if (confirm(`Are you sure you want to reject order ${orderId}?`)) {
+                // Disable button to prevent double clicks
+                const button = event.target;
+                button.disabled = true;
+                button.textContent = '⏳ Rejecting...';
+                
+                try {
+                    const response = await fetch(`/api/orders/${orderId}/reject`, { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                        button.textContent = '❌ Rejected';
+                        button.style.backgroundColor = '#dc3545';
+                        
+                        // Hide the entire order card since it's no longer pending
+                        const orderCard = button.closest('.order-card');
+                        orderCard.style.opacity = '0.5';
+                        orderCard.style.pointerEvents = 'none';
+                        
+                        // Show rejection message
+                        const statusDiv = orderCard.querySelector('.order-status');
+                        statusDiv.textContent = 'Rejected ❌';
+                        statusDiv.className = 'order-status status-rejected';
+                        
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        alert('Error rejecting order');
+                        button.disabled = false;
+                        button.textContent = '❌ Reject';
+                    }
+                } catch (error) {
+                    alert('Error rejecting order');
+                    button.disabled = false;
+                    button.textContent = '❌ Reject';
+                }
+            }
+        }
+        
+        async function completeOrder(orderId) {
+            // Disable button to prevent double clicks
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '⏳ Completing...';
+            
+            try {
+                const response = await fetch(`/api/orders/${orderId}/complete`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    button.textContent = '🍕 Ready';
+                    button.style.backgroundColor = '#28a745';
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('Error completing order');
+                    button.disabled = false;
+                    button.textContent = '🍕 Mark Ready';
+                }
+            } catch (error) {
+                alert('Error completing order');
+                button.disabled = false;
+                button.textContent = '🍕 Mark Ready';
+            }
+        }
+    </script>
+</body>
+</html>

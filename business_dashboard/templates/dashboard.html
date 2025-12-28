@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍕 Pizza Business Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        
+        .header { background: #d32f2f; color: white; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header h1 { display: inline-block; }
+        .header .time { float: right; font-size: 0.9rem; opacity: 0.9; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #d32f2f; }
+        .stat-label { color: #666; margin-top: 0.5rem; }
+        
+        .pending-orders { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .section-header { background: #f8f9fa; padding: 1rem; border-bottom: 1px solid #dee2e6; font-weight: bold; }
+        
+        .order-card { padding: 1rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .order-card:last-child { border-bottom: none; }
+        .order-card:first-child { background: #f8f9ff; border-left: 4px solid #2196f3; } /* Highlight newest order */
+        .order-info { flex: 1; }
+        .order-id { font-weight: bold; color: #d32f2f; }
+        .order-details { color: #666; margin: 0.25rem 0; }
+        .order-time { font-size: 0.9rem; color: #999; }
+        
+        .order-actions { display: flex; gap: 0.5rem; align-items: center; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .btn-confirm { background: #4caf50; color: white; }
+        .btn-reject { background: #f44336; color: white; }
+        .btn-complete { background: #2196f3; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .status-badge { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: bold; white-space: nowrap; }
+        .status-preparing { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-completed { background: #cce5ff; color: #004085; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        
+        .recent-orders { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .empty-state { text-align: center; padding: 3rem; color: #666; }
+        
+        .refresh-btn { background: #2196f3; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; float: right; margin-top: -0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍕 Pizza Business Dashboard</h1>
+        <div class="time" id="currentTime"></div>
+    </div>
+    
+    <div class="container">
+        <!-- Today's Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ today_stats.get('total_orders', 0) }}</div>
+                <div class="stat-label">Total Orders Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ today_stats.get('pending_orders', 0) }}</div>
+                <div class="stat-label">Pending Approval</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ today_stats.get('confirmed_orders', 0) }}</div>
+                <div class="stat-label">Confirmed Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ today_stats.get('completed_orders', 0) }}</div>
+                <div class="stat-label">Completed Orders</div>
+            </div>
+        </div>
+        
+        <!-- Pending Orders (Need Approval) -->
+        <div class="pending-orders">
+            <div class="section-header">
+                🔔 Orders Awaiting Your Approval
+                <button class="refresh-btn" onclick="location.reload()">Refresh</button>
+            </div>
+            {% if pending_orders %}
+                {% for order in pending_orders %}
+                <div class="order-card">
+                    <div class="order-info">
+                        <div class="order-id">Order #{{ order.order_id }}</div>
+                        <div class="order-details">{{ order.items_summary }}</div>
+                        <div class="order-total">Total: Rs.{{ "%.0f"|format(order.total_amount) }}</div>
+                        <div class="order-time">⏰ {{ order.created_at }} ({{ ((order.created_at | string).split(' ')[1].split(':')[0] + ':' + (order.created_at | string).split(' ')[1].split(':')[1]) }})</div>
+                    </div>
+                    <div class="order-actions">
+                        {% if order.status == 'preparing' %}
+                            <button class="btn btn-confirm" onclick="confirmOrder('{{ order.order_id }}')">✅ Confirm</button>
+                            <button class="btn btn-reject" onclick="rejectOrder('{{ order.order_id }}')">❌ Reject</button>
+                        {% elif order.status == 'confirmed' %}
+                            <span class="status-badge status-confirmed">✅ Confirmed</span>
+                        {% elif order.status == 'rejected' %}
+                            <span class="status-badge status-rejected">❌ Rejected</span>
+                        {% elif order.status == 'completed' %}
+                            <span class="status-badge status-completed">✅ Completed</span>
+                        {% else %}
+                            <span class="status-badge">{{ order.status.title() }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <h3>🎉 All caught up!</h3>
+                    <p>No orders waiting for approval</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Recent Orders -->
+        <div class="recent-orders">
+            <div class="section-header">📋 Recent Orders (Newest First)</div>
+            {% for order in recent_orders %}
+            <div class="order-card">
+                <div class="order-info">
+                    <div class="order-id">Order #{{ order.order_id }}</div>
+                    <div class="order-details">{{ order.items_summary }}</div>
+                    <div class="order-total">Total: Rs.{{ "%.0f"|format(order.total_amount) }}</div>
+                    <div class="order-time">⏰ {{ order.created_at }}</div>
+                </div>
+                <div class="order-actions">
+                    {% if order.status == 'preparing' %}
+                        <button class="btn btn-confirm" onclick="confirmOrder('{{ order.order_id }}')">✅ Confirm</button>
+                        <button class="btn btn-reject" onclick="rejectOrder('{{ order.order_id }}')">❌ Reject</button>
+                    {% elif order.status == 'confirmed' %}
+                        <span class="status-badge status-confirmed">✅ Confirmed</span>
+                        <button class="btn btn-complete" onclick="completeOrder('{{ order.order_id }}')">🍕 Ready</button>
+                    {% elif order.status == 'rejected' %}
+                        <span class="status-badge status-rejected">❌ Rejected</span>
+                    {% elif order.status == 'completed' %}
+                        <span class="status-badge status-completed">✅ Completed</span>
+                    {% else %}
+                        <span class="status-badge">{{ order.status.title() }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Menu Management -->
+        <div class="recent-orders">
+            <div class="section-header">🍕 Current Menu</div>
+            {% for item in menu_items %}
+            <div class="order-card">
+                <div class="order-info">
+                    <div class="order-id">{{ item.name }}</div>
+                    <div class="order-details">{{ item.description }}</div>
+                    <div class="order-time">💰 Rs.{{ item.price }} | Sizes: {{ item.sizes_display }}</div>
+                </div>
+                <div class="order-actions">
+                    <span class="status-badge status-confirmed">Available</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <script>
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const options = { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: true 
+            };
+            document.getElementById('currentTime').textContent = now.toLocaleDateString('en-IN', options);
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Auto refresh every 3 minutes
+        setInterval(() => location.reload(), 180000);
+        
+        // Order actions
+        async function confirmOrder(orderId) {
+            // Disable all buttons for this order to prevent conflicts
+            const orderCard = event.target.closest('.order-card');
+            const buttons = orderCard.querySelectorAll('.btn');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            const button = event.target;
+            button.textContent = '⏳ Confirming...';
+            
+            try {
+                const response = await fetch(`/api/orders/${orderId}/confirm`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    // Replace buttons with status badge
+                    const actionsDiv = orderCard.querySelector('.order-actions');
+                    actionsDiv.innerHTML = '<span class="status-badge status-confirmed">✅ Confirmed</span><button class="btn btn-complete" onclick="completeOrder(\'' + orderId + '\')">🍕 Ready</button>';
+                } else {
+                    // Show inline error
+                    button.textContent = '❌ Error';
+                    button.style.backgroundColor = '#dc3545';
+                    setTimeout(() => {
+                        buttons.forEach(btn => btn.disabled = false);
+                        button.textContent = '✅ Confirm';
+                        button.style.backgroundColor = '#4caf50';
+                    }, 2000);
+                }
+            } catch (error) {
+                // Show inline error
+                button.textContent = '❌ Error';
+                button.style.backgroundColor = '#dc3545';
+                setTimeout(() => {
+                    buttons.forEach(btn => btn.disabled = false);
+                    button.textContent = '✅ Confirm';
+                    button.style.backgroundColor = '#4caf50';
+                }, 2000);
+            }
+        }
+                button.textContent = '✅ Confirm';
+            }
+        }
+        
+        async function rejectOrder(orderId) {
+            if (confirm(`Are you sure you want to reject order ${orderId}?`)) {
+                // Disable all buttons for this order
+                const orderCard = event.target.closest('.order-card');
+                const buttons = orderCard.querySelectorAll('.btn');
+                buttons.forEach(btn => btn.disabled = true);
+                
+                const button = event.target;
+                button.textContent = '⏳ Rejecting...';
+                
+                try {
+                    const response = await fetch(`/api/orders/${orderId}/reject`, { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                        // Replace buttons with status badge
+                        const actionsDiv = orderCard.querySelector('.order-actions');
+                        actionsDiv.innerHTML = '<span class="status-badge status-rejected">❌ Rejected</span>';
+                    } else {
+                        // Show inline error
+                        button.textContent = '❌ Error';
+                        button.style.backgroundColor = '#dc3545';
+                        setTimeout(() => {
+                            buttons.forEach(btn => btn.disabled = false);
+                            button.textContent = '❌ Reject';
+                            button.style.backgroundColor = '#f44336';
+                        }, 2000);
+                    }
+                } catch (error) {
+                    // Show inline error
+                    button.textContent = '❌ Error';
+                    button.style.backgroundColor = '#dc3545';
+                    setTimeout(() => {
+                        buttons.forEach(btn => btn.disabled = false);
+                        button.textContent = '❌ Reject';
+                        button.style.backgroundColor = '#f44336';
+                    }, 2000);
+                }
+            }
+        }
+                    alert('Error rejecting order');
+                    button.disabled = false;
+                    button.textContent = '❌ Reject';
+                }
+            }
+        }
+        
+        async function completeOrder(orderId) {
+            // Disable button to prevent double clicks
+            const button = event.target;
+        async function completeOrder(orderId) {
+            const orderCard = event.target.closest('.order-card');
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '⏳ Completing...';
+            
+            try {
+                const response = await fetch(`/api/orders/${orderId}/complete`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    // Replace button with completed status
+                    const actionsDiv = orderCard.querySelector('.order-actions');
+                    actionsDiv.innerHTML = '<span class="status-badge status-completed">✅ Completed</span>';
+                } else {
+                    // Show inline error
+                    button.textContent = '❌ Error';
+                    button.style.backgroundColor = '#dc3545';
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = '🍕 Ready';
+                        button.style.backgroundColor = '#2196f3';
+                    }, 2000);
+                }
+            } catch (error) {
+                // Show inline error
+                button.textContent = '❌ Error';
+                button.style.backgroundColor = '#dc3545';
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = '🍕 Ready';
+                    button.style.backgroundColor = '#2196f3';
+                }, 2000);
+            }
+        }
+        }
+    </script>
+</body>
+</html>
