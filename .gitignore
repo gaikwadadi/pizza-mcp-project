@@ -7,14 +7,17 @@ __pycache__/
 venv/
 env/
 ENV/
+*.egg-info/
+dist/
+build/
 
-# Environment
+# Environment Variables (CRITICAL - Don't expose API keys)
 .env
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
+# Database (Keep sample DB for demo)
+# *.db
+# *.sqlite
+# *.sqlite3
 
 # IDE
 .vscode/
@@ -23,18 +26,42 @@ ENV/
 *.swo
 *~
 
-# Generated files
-generated/*.py
-!generated/__init__.py
+# Generated files (Keep for demo - these show the transformation output)
+# generated/*.py
+# !generated/__init__.py
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
 
 # OS
 .DS_Store
 Thumbs.db
+*.DS_Store
 
 # Logs
 *.log
+logs/
+
+# Node modules (if any)
+node_modules/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
